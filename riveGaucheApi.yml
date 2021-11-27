@@ -1,0 +1,401 @@
+openapi: "3.0.0"
+info:
+  title: "Rive Gauche API"
+  version: "0.0"
+  description: |
+    Документ содержит описание API сервиса Rive Gauche, использующегося в мобильных приложениях на платформах Android и iOS. 
+    Описанию подлежат все модели данных с полным набором полей, а также все методы, используемые для клиент-серверного взаимодействия.
+
+servers:
+- url: https://адрес-сервера
+  description: Test server
+- url: https://адрес-сервера
+  description: Server1
+security:
+  - authApiKey: []
+
+paths:
+  /login:
+    post:
+      security: []
+      summary: Авторизация/вход
+      description: За основу принят метод /auth, использованный ...
+      requestBody:
+        description: "тело запроса"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        '200':
+          description: "Положительный ответ"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        '400':
+          description: |
+            * 102, 119, 120 - Неправильный логин/пароль;
+            * 104, 126 - Аккаунта не существует;
+            * 123 - Аккаунт заблокирован;
+            * 117 - Требуется обновление приложения.
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: integer
+                    example: 117
+
+  /catalog:
+    get:
+      security: []
+      summary: Каталог товаров
+      description: Получение каталога товаров магазина Rive Gauche
+      responses:
+        '200':
+          description: "Положительный ответ"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProdCatalog"
+        '400':
+          description: |
+            * 522 Connection Timed Out («соединение не отвечает»)
+            * 524 A Timeout Occurred («время ожидания истекло»)
+          content:
+            application/json:
+              schema:
+                properties:
+                  code:
+                    type: integer
+                    example: 117
+        
+
+
+
+
+  
+
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT 
+
+    authApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key 
+
+  schemas:
+
+    LoginRequest:
+      properties:
+        login:
+          description: Адрес электронной почты или номер телефона
+          type: string
+          example: "79001234567"
+          nullable: false
+        pass:
+          description: Пароль
+          type: string
+          example: "qwerty123"
+          nullable: false
+      
+
+    AuthResponse:
+      properties:
+        profile:
+          $ref: '#/components/schemas/Profile'
+          nullable: false
+        token: 
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5
+          nullable: false  
+
+    Profile: 
+      allOf: 
+        - type: object
+          properties: 
+            id: 
+              $ref: "#/components/schemas/Id"
+              nullable: false
+            phone: 
+              $ref: "#/components/schemas/Phone"
+              nullable: false
+            card: 
+              $ref: "#/components/schemas/ProfileCard"
+              nullable: false
+            seller_qr: 
+              type: string
+              description: | 
+                Последовательность для генерации QR-кода.
+                Если это поле пустое, клиент не отображает никакого кода. 
+        - $ref: "#/components/schemas/ProfileInfo"
+     
+
+    Id: 
+      type: string
+      example: 123dff
+
+    Phone: 
+      type: string
+      example: "89093932322"
+
+    ProfileCard: 
+      type: string
+      example: "47474747447474747322"
+
+    ProfileInfo: 
+      properties: 
+        first_name: 
+          type: string
+          description: Имя
+          example: "Иван"
+          nullable: false
+        last_name: 
+          type: string
+          description: Фамилия
+          example: "Иванов"
+          nullable: false
+        middle_name: 
+          type: string
+          description: Отчество
+          example: "Иванович"
+        email:
+          type: string
+          description: Email пользователя
+          example: ni23412@mail.com
+        city:
+          type: string
+          description: Город пользователя
+          example: Воронеж
+        user_card:
+          type: integer
+          description: Скидочная карта пользователя
+          example: 44401896444
+
+        sms_news:
+          type: boolean
+          description: Подписка на смс-уведомления
+          example: true
+        email_news:
+          type: boolean
+          description: Подписка на уведомления по email
+          example: true
+
+        birth:
+          type: string
+          description: Дата рождения пользователя
+          example: 29 мая 2000
+          nullable: false
+        gender:
+          type: string
+          description: пол пользователя
+          example: мужской
+          nullable: false
+
+        my_orders:
+          $ref: "#/components/schemas/UserOrders"
+          nullable: false
+
+        purchases:
+          $ref: "#/components/schemas/UserPurchases"
+          nullable: false
+  
+    UserPurchases:
+      properties: 
+        pursase:
+          type: array
+          description: список товаров, купленных пользователем
+          example: карточка товара1, карточка товара2, нет совершенных покупок
+          nullable: false
+    
+    UserOrders:
+      properties: 
+        order:
+          type: array
+          description: список заказов, совершенных пользователем
+          example: заказ1 (товар1, товар2) - доставлен, заказ2 (товар3) - собран на складе
+          nullable: false
+
+    ProdCatalog:
+      properties: 
+        categories: 
+          description: переход в список товаров по категории
+          $ref: "#/components/schemas/Category"
+          nullable: false
+        brands: 
+          description: переход в список товаров по бренду
+          $ref: "#/components/schemas/Brand"
+          nullable: false
+    
+    Category: 
+      allOf: 
+        - type: array
+          properties: 
+            ProdPicture:
+              type: array
+              description: изображение товара
+            ProdName:
+              type: string
+              description: наименование товара
+              nullable: false
+            ProdType:
+              type: string
+              description: категория товара
+              nullable: false
+            ProdWish:
+              type: boolean
+              description: добавлен ли товар в избранное
+              nullable: false
+            ProdBasket:
+              type: boolean
+              description: добавлен ли товар в корзину
+              nullable: false
+            ProdSort:
+              type: string
+              description: признак сортировки товаров 
+              nullable: false
+            ProdFilter:
+              type: boolean
+              description: фильтруются ли товары?
+              nullable: false
+        - $ref: "#/components/schemas/ProductCard"
+        
+            
+
+    Brand:
+      allOf: 
+        - type: array
+          properties: 
+            ProdPicture:
+              type: array
+              description: изображение товара
+            ProdName:
+              type: string
+              description: наименование товара
+              nullable: false
+            ProdType:
+              type: string
+              description: категория товара
+              nullable: false
+            ProdWish:
+              type: boolean
+              description: добавлен ли товар в избранное
+              nullable: false
+            ProdBasket:
+              type: boolean
+              description: добавлен ли товар в корзину
+              nullable: false
+            ProdSort:
+              type: string
+              description: признак сортировки товаров 
+              nullable: false
+            ProdFilter:
+              type: boolean
+              description: фильтруются ли товары?
+              $ref: "#/components/schemas/TypeSort"
+        - $ref: "#/components/schemas/ProductCard"
+    
+        
+    TypeSort: 
+       allOf: 
+        - type: array
+          properties: 
+            Price:
+              type: integer
+              description: сортировка по цене
+              nullable: false
+            availability:
+              type: string
+              description: наличие товара
+              nullable: false
+            specialOffers:
+              type: string
+              description: специальные предложения
+            typeProd:
+              type: string
+              description: тип товара
+            typeParfume:
+              type: string
+              description: тип парфюма
+            typeSkin:
+              type: string
+              description: тип кожи
+            typeAccessorie:
+              type: string
+              description: тип аксессуара
+            forBody:
+              type: string
+              description: средства для тела
+            forHands:
+              type: string
+              description: средства для рук
+            forFace:
+              type: string
+              description: средства для лица
+            forShaving:
+              type: string
+              description: средства для бритья
+            result:
+              type: string
+              description: результат средства
+            forWho:
+              type: string
+              description: для кого (муж/жен)
+            aroma:
+              type: string
+              description: аромат 
+        - $ref: "#/components/schemas/Brand"
+        - $ref: "#/components/schemas/Category"
+      
+  
+    ProductCard:
+      properties: 
+        id: 
+          type: integer
+          description: ID товара
+              
+        productInfo:
+          type: string
+          description: описание товара внутри карточки
+
+            
+
+
+          
+
+            
+            
+
+    
+
+    
+          
+
+    
+
+
+
+          
+
+
+     
+
+ 
+
+    
+
+
+        
+
+            
+
+                
+              
+              
